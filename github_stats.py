@@ -13,6 +13,9 @@ import requests
 ###############################################################################
 
 
+RETRY_TIMES = 3
+
+
 class Queries(object):
     """
     Class with functions to query the GitHub GraphQL (v4) API and the REST (v3)
@@ -73,7 +76,7 @@ class Queries(object):
         :return: deserialized REST JSON output
         """
 
-        for _ in range(60):
+        for _ in range(RETRY_TIMES):
             headers = {
                 "Authorization": f"token {self.access_token}",
             }
