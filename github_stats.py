@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Dict, List, Optional, Set, Tuple, Any, cast
+from typing import Any, cast
 
 import aiohttp
 import requests
@@ -34,7 +34,7 @@ class Queries(object):
         self.session = session
         self.semaphore = asyncio.Semaphore(max_connections)
 
-    async def query(self, generated_query: str) -> Dict:
+    async def query(self, generated_query: str) -> dict:
         """
         Make a request to the GraphQL API using the authentication token from
         the environment
@@ -68,7 +68,7 @@ class Queries(object):
                     return result
         return dict()
 
-    async def query_rest(self, path: str, params: Optional[Dict] = None) -> Dict:
+    async def query_rest(self, path: str, params: dict | None = None) -> dict:
         """
         Make a request to the REST API
         :param path: API path to query
@@ -121,7 +121,7 @@ class Queries(object):
 
     @staticmethod
     def repos_overview(
-        contrib_cursor: Optional[str] = None, owned_cursor: Optional[str] = None
+        contrib_cursor: str | None = None, owned_cursor: str | None = None
     ) -> str:
         """
         :return: GraphQL query with overview of user repositories
@@ -233,7 +233,7 @@ query {
 """
 
     @classmethod
-    def all_contribs(cls, years: List[str]) -> str:
+    def all_contribs(cls, years: list[str]) -> str:
         """
         :param years: list of years to get contributions for
         :return: query to retrieve contribution information for all user years
@@ -258,8 +258,8 @@ class Stats(object):
         username: str,
         access_token: str,
         session: aiohttp.ClientSession,
-        exclude_repos: Optional[Set] = None,
-        exclude_langs: Optional[Set] = None,
+        exclude_repos: set[str] | None = None,
+        exclude_langs: set[str] | None = None,
         ignore_forked_repos: bool = False,
     ):
         self.username = username
@@ -268,14 +268,14 @@ class Stats(object):
         self._exclude_langs = set() if exclude_langs is None else exclude_langs
         self.queries = Queries(username, access_token, session)
 
-        self._name: Optional[str] = None
-        self._stargazers: Optional[int] = None
-        self._forks: Optional[int] = None
-        self._total_contributions: Optional[int] = None
-        self._languages: Optional[Dict[str, Any]] = None
-        self._repos: Optional[Set[str]] = None
-        self._lines_changed: Optional[Tuple[int, int]] = None
-        self._views: Optional[int] = None
+        self._name: str | None = None
+        self._stargazers: int | None = None
+        self._forks: int | None = None
+        self._total_contributions: int | None = None
+        self._languages: dict[str, Any] | None = None
+        self._repos: set[str] | None = None
+        self._lines_changed: tuple[int, int] | None = None
+        self._views: int | None = None
 
     async def to_str(self) -> str:
         """
@@ -300,7 +300,7 @@ Languages:
 
     async def get_stats(self) -> None:
         """
-        Get lots of summary statistics using one big query. Sets many attributes
+        Get lots of summary statistics using one big query. sets many attributes
         """
         self._stargazers = 0
         self._forks = 0
@@ -417,7 +417,7 @@ Languages:
         return self._forks
 
     @property
-    async def languages(self) -> Dict:
+    async def languages(self) -> dict:
         """
         :return: summary of languages used by the user
         """
@@ -428,7 +428,7 @@ Languages:
         return self._languages
 
     @property
-    async def languages_proportional(self) -> Dict:
+    async def languages_proportional(self) -> dict:
         """
         :return: summary of languages used by the user, with proportional usage
         """
@@ -439,7 +439,7 @@ Languages:
         return {k: v.get("prop", 0) for (k, v) in self._languages.items()}
 
     @property
-    async def repos(self) -> Set[str]:
+    async def repos(self) -> set[str]:
         """
         :return: list of names of user's repos
         """
@@ -478,7 +478,7 @@ Languages:
         return cast(int, self._total_contributions)
 
     @property
-    async def lines_changed(self) -> Tuple[int, int]:
+    async def lines_changed(self) -> tuple[int, int]:
         """
         :return: count of total lines added, removed, or modified by the user
         """
