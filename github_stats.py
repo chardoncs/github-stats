@@ -51,10 +51,10 @@ class Queries(object):
                     headers=headers,
                     json={"query": generated_query},
                 )
+            r_async.raise_for_status()
             result = await r_async.json()
-            if result is not None:
-                return result
-        except:
+            return self._validate_graphql_result(result)
+        except aiohttp.ClientError:
             print("aiohttp failed for GraphQL query")
             # Fall back on non-async requests
             async with self.semaphore:
@@ -63,10 +63,23 @@ class Queries(object):
                     headers=headers,
                     json={"query": generated_query},
                 )
+                r_requests.raise_for_status()
                 result = r_requests.json()
-                if result is not None:
-                    return result
-        return dict()
+                return self._validate_graphql_result(result)
+
+    @staticmethod
+    def _validate_graphql_result(result: Any) -> dict:
+        """Return a GraphQL response or expose the API error to the workflow."""
+        if not isinstance(result, dict):
+            raise RuntimeError("GitHub GraphQL returned an invalid response.")
+        if errors := result.get("errors"):
+            messages = "; ".join(
+                error.get("message", str(error))
+                for error in errors
+                if isinstance(error, dict)
+            )
+            raise RuntimeError(f"GitHub GraphQL query failed: {messages or errors}")
+        return result
 
     async def query_rest(self, path: str, params: dict | None = None) -> dict:
         """
@@ -534,10 +547,10 @@ async def main() -> None:
     Used mostly for testing; this module is not usually run standalone
     """
     access_token = os.getenv("ACCESS_TOKEN")
-    user = os.getenv("GITHUB_ACTOR")
+    user = os.getenv("STATS_USERNAME")
     if access_token is None or user is None:
         raise RuntimeError(
-            "ACCESS_TOKEN and GITHUB_ACTOR environment variables cannot be None!"
+            "ACCESS_TOKEN and STATS_USERNAME environment variables cannot be None!"
         )
     async with aiohttp.ClientSession() as session:
         s = Stats(user, access_token, session)
